@@ -1,0 +1,106 @@
+#include <Servo.h>
+
+#include <IRremote.h>
+
+const int headlightPin = 2;
+const int leftPin = 3;
+const int rightPin = 4;
+const int hornPin = 8;
+const int RECV_PIN = 5;
+const int trigPin = 11;
+const int echoPin = 12;
+const int wheelPin = 6;
+const int servoPin = 9;
+
+int distance;
+int duration;
+
+Servo servo;
+IRrecv irrecv(RECV_PIN);
+decode_results results;
+
+void setup()
+{
+ pinMode(headlightPin,OUTPUT);
+ pinMode(leftPin,OUTPUT);
+ pinMode(rightPin,OUTPUT);
+ pinMode(hornPin,OUTPUT);
+ pinMode(trigPin,OUTPUT);
+ pinMode(echoPin,INPUT);
+ servo.attach(servoPin);
+  
+ irrecv.enableIRIn();
+ 
+  
+  // inititial conditions
+  digitalWrite(headlightPin,LOW);
+   digitalWrite(leftPin,LOW);
+    digitalWrite(hornPin,LOW);
+    digitalWrite(rightPin,LOW);
+    digitalWrite(wheelPin,LOW);
+    servo.write(0);
+}
+void loop()
+{
+   if (irrecv.decode(&results)) {
+    switch (results.value) {
+      case 0xFD00FF: // headlight button power button
+        digitalWrite(headlightPin,HIGH);
+        break;
+      case 0xFD20DF: // left indicator button |<<
+        digitalWrite(leftPin,HIGH);
+        delay(500);
+        digitalWrite(leftPin,LOW);
+        delay(500);
+        break;
+      case 0xFD609F: // right indicator button |>>
+        digitalWrite(rightPin,HIGH);
+        delay(500);
+        digitalWrite(rightPin,LOW);
+        delay(500);
+        break;
+      case 0xFDA05F: // horn button >||
+        digitalWrite(hornPin, HIGH);
+        delay(100);
+        digitalWrite(hornPin, LOW);
+        delay(100);
+        digitalWrite(hornPin, HIGH);
+        delay(100);
+        digitalWrite(hornPin, LOW);
+        break;
+    }
+    irrecv.resume();
+       
+   }
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+  duration = pulseIn(echoPin, HIGH);
+  distance = (duration * 0.034 / 2);
+  
+  if(distance > 50)
+  {
+    Serial.println('Moving straight');
+    digitalWrite(wheelPin,HIGH);
+    digitalWrite(headlightPin,LOW);
+    
+    
+  }
+  
+  else
+  {
+    Serial.println('Obstacle detected');
+    digitalWrite(wheelPin,HIGH);
+    digitalWrite(leftPin,HIGH);
+    servo.write(45);
+    delay(500);
+    digitalWrite(leftPin,LOW);
+    servo.write(0);
+    delay(500);
+    
+  }
+  
+}
+    
